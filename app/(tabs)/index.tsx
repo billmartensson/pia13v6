@@ -1,52 +1,100 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Image, StyleSheet, Platform, View, Text, SafeAreaView, TextInput, Button, FlatList } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+class Shopitem {
+  id: string = "";
+  title: string = "";
+  amount: number = 0;
+  havebought: boolean = false;
+}
+
+
+
 
 export default function HomeScreen() {
+  
+
+  const [shopdata, setShopdata] = useState<Shopitem[]>([]); 
+
+
+  const [shoptext, setShoptext] = useState("");
+  const [addtext, setAddtext] = useState("");
+  const [addamount, setAddamount] = useState("");
+  
+
+
+  useEffect(() => {
+    loadShopping();
+  }, []);
+
+  async function deleteall() {
+    await AsyncStorage.removeItem("shoplist");
+  }
+
+  async function saveShopping() {
+    setShoptext(addtext);
+
+    const addamountNumber = parseInt(addamount);
+    if(isNaN(addamountNumber)) {
+      return;
+    }
+
+    const addShop = new Shopitem();
+    addShop.id = addtext;
+    addShop.title = addtext;
+    addShop.amount = addamountNumber;
+
+    const newshop = [...shopdata, addShop];
+    const newshopjson = JSON.stringify(newshop);
+
+    await AsyncStorage.setItem("shoplist", newshopjson);
+
+    setShopdata(newshop);
+
+    await AsyncStorage.setItem("mytext", addtext);
+  }
+
+  async function loadShopping() {
+    const loadedtext = await AsyncStorage.getItem("mytext");
+
+    if(loadedtext != null) {
+      setShoptext(loadedtext);
+    }
+
+    const loadedshop = await AsyncStorage.getItem("shoplist");
+
+    if(loadedshop != null) {
+      const loadedshopjson = JSON.parse(loadedshop);
+      setShopdata(loadedshopjson);
+    }
+    
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView>
+      <View>
+        <Text>{ shoptext }</Text>
+
+        <TextInput onChangeText={setAddtext} value={addtext} />
+        <TextInput onChangeText={setAddamount} value={addamount} />
+
+        <Button title='Save' onPress={saveShopping} />
+
+        <Button title='Delete all' onPress={deleteall} />
+
+        <FlatList
+          data={shopdata}
+          renderItem={({item}) => <Text>{ item.title } { item.amount }</Text>}
+          />
+
+      </View>
+    </SafeAreaView>
   );
 }
 
