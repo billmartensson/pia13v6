@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Platform, View, Text, SafeAreaView, TextInput, Button, FlatList } from 'react-native';
+import { Image, StyleSheet, Platform, View, Text, SafeAreaView, TextInput, Button, FlatList, Pressable } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -46,7 +46,7 @@ export default function HomeScreen() {
     }
 
     const addShop = new Shopitem();
-    addShop.id = addtext;
+    addShop.id = "a";
     addShop.title = addtext;
     addShop.amount = addamountNumber;
 
@@ -76,6 +76,53 @@ export default function HomeScreen() {
     
   }
 
+  async function switchBought(rownumber : number){    
+    const clickedshop = shopdata[rownumber];
+
+    const newshop = [...shopdata];
+    
+    /*
+    if(clickedshop.havebought == true) {
+      clickedshop.havebought = false;
+    } else {
+      clickedshop.havebought = true;
+    }
+    */
+
+    clickedshop.havebought = !clickedshop.havebought;
+
+    newshop[rownumber] = clickedshop;
+    setShopdata(newshop);
+
+    const newshopjson = JSON.stringify(newshop);
+
+    await AsyncStorage.setItem("shoplist", newshopjson);
+  }
+
+  async function showAll() {
+    const loadedshop = await AsyncStorage.getItem("shoplist");
+
+    if(loadedshop != null) {
+      const loadedshopjson = JSON.parse(loadedshop);
+      setShopdata(loadedshopjson);
+    }
+  }
+
+  async function showBought() {
+    const loadedshop = await AsyncStorage.getItem("shoplist");
+
+    if(loadedshop != null) {
+      const loadedshopjson = JSON.parse(loadedshop);
+      const filtershop = loadedshopjson.filter((item) => item.havebought == true);
+
+      setShopdata(filtershop);
+    }
+  }
+
+  function showNotBought() {
+
+  }
+
   return (
     <SafeAreaView>
       <View>
@@ -88,9 +135,19 @@ export default function HomeScreen() {
 
         <Button title='Delete all' onPress={deleteall} />
 
+        <View style={{ flexDirection: "row" }}>
+          <Button title='Alla' onPress={ showAll } />
+          <Button title='Köpt' onPress={ showBought } />
+          <Button title='Ej köpt' onPress={ showNotBought } />
+        </View>
+
         <FlatList
           data={shopdata}
-          renderItem={({item}) => <Text>{ item.title } { item.amount }</Text>}
+          renderItem={({item, index}) => 
+            <Pressable onPress={() => { switchBought(index) }}>
+              <Text>{ item.title } { item.amount } { item.havebought ? "KÖPT" : "EJ KÖPT" }</Text>
+            </Pressable>
+          }
           />
 
       </View>
