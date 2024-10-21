@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Platform, View, Text, SafeAreaView, TextInput, Button, FlatList, Pressable } from 'react-native';
+import { Image, StyleSheet, Platform, View, Text, SafeAreaView, TextInput, Button, FlatList, Pressable, TouchableHighlight } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -6,16 +6,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-class Shopitem {
-  id: string = "";
-  title: string = "";
-  amount: number = 0;
-  havebought: boolean = false;
-}
-
-
-
+import Shoprow from '@/components/ShopRow';
 
 export default function HomeScreen() {
   
@@ -39,10 +30,11 @@ export default function HomeScreen() {
   useEffect(() => {
     console.log("NU ÄNDRADE VI FILTER");
     showList();
-  }, [listtype]);
+  }, [listtype, allShopdata]);
 
   async function deleteall() {
     await AsyncStorage.removeItem("shoplist");
+    setAllShopdata([]);
   }
 
   async function saveShopping() {
@@ -66,9 +58,6 @@ export default function HomeScreen() {
     await AsyncStorage.setItem("shoplist", newshopjson);
 
     setAllShopdata(newshop);
-
-    showList();
-
 
     await AsyncStorage.setItem("mytext", addtext);
   }
@@ -147,36 +136,80 @@ export default function HomeScreen() {
   return (
     <SafeAreaView>
       <View>
-        <Text>{ shoptext }</Text>
-
-        <TextInput onChangeText={setAddtext} value={addtext} />
-        <TextInput onChangeText={setAddamount} value={addamount} />
-
-        <Button title='Save' onPress={saveShopping} />
-
-        <Button title='Delete all' onPress={deleteall} />
+        
+        <View style={{ flexDirection: "row" }}>
+          <View style={{ flex: 1 }}>
+            <TextInput style={styles.shopTextinput} placeholder='Namn' onChangeText={setAddtext} value={addtext} />
+            <TextInput style={styles.shopTextinput} placeholder='Antal' onChangeText={setAddamount} value={addamount} />
+          </View>
+          <Button title='Add' onPress={saveShopping} />
+        </View>
 
         <View style={{ flexDirection: "row" }}>
-          <Button title={ listtype == "ALL" ? '*Alla*' : 'Alla'} onPress={ showAll } />
-          <Button title={ listtype == "BOUGHT" ? '*Köpt*' : 'Köpt'} onPress={ showBought } />
-          <Button title={ listtype == "NOTBOUGHT" ? '*Ej köpt*' : 'Ej köpt'} onPress={ showNotBought } />
+          
+          <TouchableHighlight style={ listtype == "ALL" ? styles.shopFilterTabActive : styles.shopFilterTab } onPress={showAll}>
+            <View>
+              <Text>Alla</Text>
+            </View>
+          </TouchableHighlight>
+
+          <TouchableHighlight style={ listtype == "BOUGHT" ? styles.shopFilterTabActive : styles.shopFilterTab } onPress={showBought}>
+            <View>
+              <Text>Köpt</Text>
+            </View>
+          </TouchableHighlight>
+
+          <TouchableHighlight style={ listtype == "NOTBOUGHT" ? styles.shopFilterTabActive : styles.shopFilterTab } onPress={showNotBought}>
+            <View>
+              <Text>Ej köpt</Text>
+            </View>
+          </TouchableHighlight>
+
         </View>
 
         <FlatList
+          style={{ }}
           data={shopdata}
           renderItem={({item, index}) => 
             <Pressable onPress={() => { switchBought(item.id) }}>
-              <Text>{ item.title } { item.amount } { item.havebought ? "KÖPT" : "EJ KÖPT" }</Text>
+              <Shoprow rowitem={item} />
             </Pressable>
           }
           />
+
+        <Button title='Delete all' onPress={deleteall} />
 
       </View>
     </SafeAreaView>
   );
 }
 
+/*
+
+          <Button title={ listtype == "ALL" ? '*Alla*' : 'Alla'} onPress={ showAll } />
+          <Button title={ listtype == "BOUGHT" ? '*Köpt*' : 'Köpt'} onPress={ showBought } />
+          <Button title={ listtype == "NOTBOUGHT" ? '*Ej köpt*' : 'Ej köpt'} onPress={ showNotBought } />
+
+*/
+
 const styles = StyleSheet.create({
+  shopTextinput: {
+    backgroundColor: "lightgrey",
+    marginLeft: 10,
+    marginRight: 10,
+    marginTop: 5,
+    padding: 4
+  },
+  shopFilterTab: {
+    backgroundColor: "red",
+    height: 50,
+    flex: 1
+  },
+  shopFilterTabActive: {
+    backgroundColor: "green",
+    height: 50,
+    flex: 1
+  },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
