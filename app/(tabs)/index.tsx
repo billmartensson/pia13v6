@@ -36,6 +36,11 @@ export default function HomeScreen() {
     loadShopping();
   }, []);
 
+  useEffect(() => {
+    console.log("NU ÄNDRADE VI FILTER");
+    showList();
+  }, [listtype]);
+
   async function deleteall() {
     await AsyncStorage.removeItem("shoplist");
   }
@@ -48,8 +53,10 @@ export default function HomeScreen() {
       return;
     }
 
+    const now = Date.now();
+
     const addShop = new Shopitem();
-    addShop.id = "a";
+    addShop.id = now.toString();
     addShop.title = addtext;
     addShop.amount = addamountNumber;
 
@@ -83,54 +90,55 @@ export default function HomeScreen() {
     
   }
 
-  async function switchBought(rownumber : number){    
-    const clickedshop = shopdata[rownumber];
-
-    const newshop = [...shopdata];
+  async function switchBought(shopid : string){    
     
-    /*
-    if(clickedshop.havebought == true) {
-      clickedshop.havebought = false;
-    } else {
-      clickedshop.havebought = true;
-    }
-    */
+    // hitta shopid i totala listan
+    const shopindex = allShopdata.findIndex((item) => item.id == shopid);
+    const clickedShop = allShopdata[shopindex];
 
-    clickedshop.havebought = !clickedshop.havebought;
+    console.log(clickedShop);
 
-    newshop[rownumber] = clickedshop;
-    setShopdata(newshop);
+    // Ändra bought
+    clickedShop.havebought = !clickedShop.havebought;
+
+    // Spara listan
+    const newshop = [...allShopdata];
+    newshop[shopindex] = clickedShop;
+    setAllShopdata(newshop);
+
+    showList();
 
     const newshopjson = JSON.stringify(newshop);
-
     await AsyncStorage.setItem("shoplist", newshopjson);
+
   }
 
   async function showAll() {
     setListtype("ALL");
-    showList();
   }
 
   async function showBought() {
     setListtype("BOUGHT");
-    showList();
   }
 
   function showNotBought() {
     setListtype("NOTBOUGHT");
-    showList();
   }
 
   function showList() {
+    console.log("NU FILTER " + listtype);
     if(listtype == "ALL") {
+      console.log(allShopdata);
       setShopdata(allShopdata);
     }
     if(listtype == "BOUGHT") {
       const filtershop = allShopdata.filter((item) => item.havebought == true);
+      console.log(filtershop);
       setShopdata(filtershop);
     }
     if(listtype == "NOTBOUGHT") {
       const filtershop = allShopdata.filter((item) => item.havebought == false);
+      console.log(filtershop);
       setShopdata(filtershop);
     }
     
@@ -157,7 +165,7 @@ export default function HomeScreen() {
         <FlatList
           data={shopdata}
           renderItem={({item, index}) => 
-            <Pressable onPress={() => { switchBought(index) }}>
+            <Pressable onPress={() => { switchBought(item.id) }}>
               <Text>{ item.title } { item.amount } { item.havebought ? "KÖPT" : "EJ KÖPT" }</Text>
             </Pressable>
           }
