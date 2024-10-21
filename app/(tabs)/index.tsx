@@ -20,13 +20,16 @@ class Shopitem {
 export default function HomeScreen() {
   
 
+  const [allShopdata, setAllShopdata] = useState<Shopitem[]>([]); 
   const [shopdata, setShopdata] = useState<Shopitem[]>([]); 
 
 
   const [shoptext, setShoptext] = useState("");
+  
   const [addtext, setAddtext] = useState("");
   const [addamount, setAddamount] = useState("");
   
+  const [listtype, setListtype] = useState("ALL");
 
 
   useEffect(() => {
@@ -50,12 +53,15 @@ export default function HomeScreen() {
     addShop.title = addtext;
     addShop.amount = addamountNumber;
 
-    const newshop = [...shopdata, addShop];
+    const newshop = [...allShopdata, addShop];
     const newshopjson = JSON.stringify(newshop);
 
     await AsyncStorage.setItem("shoplist", newshopjson);
 
-    setShopdata(newshop);
+    setAllShopdata(newshop);
+
+    showList();
+
 
     await AsyncStorage.setItem("mytext", addtext);
   }
@@ -71,6 +77,7 @@ export default function HomeScreen() {
 
     if(loadedshop != null) {
       const loadedshopjson = JSON.parse(loadedshop);
+      setAllShopdata(loadedshopjson);
       setShopdata(loadedshopjson);
     }
     
@@ -100,27 +107,33 @@ export default function HomeScreen() {
   }
 
   async function showAll() {
-    const loadedshop = await AsyncStorage.getItem("shoplist");
-
-    if(loadedshop != null) {
-      const loadedshopjson = JSON.parse(loadedshop);
-      setShopdata(loadedshopjson);
-    }
+    setListtype("ALL");
+    showList();
   }
 
   async function showBought() {
-    const loadedshop = await AsyncStorage.getItem("shoplist");
-
-    if(loadedshop != null) {
-      const loadedshopjson = JSON.parse(loadedshop);
-      const filtershop = loadedshopjson.filter((item) => item.havebought == true);
-
-      setShopdata(filtershop);
-    }
+    setListtype("BOUGHT");
+    showList();
   }
 
   function showNotBought() {
+    setListtype("NOTBOUGHT");
+    showList();
+  }
 
+  function showList() {
+    if(listtype == "ALL") {
+      setShopdata(allShopdata);
+    }
+    if(listtype == "BOUGHT") {
+      const filtershop = allShopdata.filter((item) => item.havebought == true);
+      setShopdata(filtershop);
+    }
+    if(listtype == "NOTBOUGHT") {
+      const filtershop = allShopdata.filter((item) => item.havebought == false);
+      setShopdata(filtershop);
+    }
+    
   }
 
   return (
@@ -136,9 +149,9 @@ export default function HomeScreen() {
         <Button title='Delete all' onPress={deleteall} />
 
         <View style={{ flexDirection: "row" }}>
-          <Button title='Alla' onPress={ showAll } />
-          <Button title='Köpt' onPress={ showBought } />
-          <Button title='Ej köpt' onPress={ showNotBought } />
+          <Button title={ listtype == "ALL" ? '*Alla*' : 'Alla'} onPress={ showAll } />
+          <Button title={ listtype == "BOUGHT" ? '*Köpt*' : 'Köpt'} onPress={ showBought } />
+          <Button title={ listtype == "NOTBOUGHT" ? '*Ej köpt*' : 'Ej köpt'} onPress={ showNotBought } />
         </View>
 
         <FlatList
