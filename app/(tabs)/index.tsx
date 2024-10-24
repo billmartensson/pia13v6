@@ -7,21 +7,23 @@ import { ThemedView } from '@/components/ThemedView';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Shoprow from '@/components/ShopRow';
+import { Shopitem } from '@/models/Shopitem';
 
 export default function HomeScreen() {
-  
 
-  const [allShopdata, setAllShopdata] = useState<Shopitem[]>([]); 
-  const [shopdata, setShopdata] = useState<Shopitem[]>([]); 
+
+  const [allShopdata, setAllShopdata] = useState<Shopitem[]>([]);
+  const [shopdata, setShopdata] = useState<Shopitem[]>([]);
 
 
   const [shoptext, setShoptext] = useState("");
-  
+
   const [addtext, setAddtext] = useState("");
   const [addamount, setAddamount] = useState("");
-  
+
   const [listtype, setListtype] = useState("ALL");
 
+  const [errormessage, setErrormessage] = useState("");
 
   useEffect(() => {
     loadShopping();
@@ -41,7 +43,14 @@ export default function HomeScreen() {
     setShoptext(addtext);
 
     const addamountNumber = parseInt(addamount);
-    if(isNaN(addamountNumber)) {
+
+    setErrormessage("");
+    if (addtext == "") {
+      setErrormessage("Skriv något");
+      return;
+    }
+    if (isNaN(addamountNumber)) {
+      setErrormessage("Skriv siffra");
       return;
     }
 
@@ -65,22 +74,22 @@ export default function HomeScreen() {
   async function loadShopping() {
     const loadedtext = await AsyncStorage.getItem("mytext");
 
-    if(loadedtext != null) {
+    if (loadedtext != null) {
       setShoptext(loadedtext);
     }
 
     const loadedshop = await AsyncStorage.getItem("shoplist");
 
-    if(loadedshop != null) {
+    if (loadedshop != null) {
       const loadedshopjson = JSON.parse(loadedshop);
       setAllShopdata(loadedshopjson);
       setShopdata(loadedshopjson);
     }
-    
+
   }
 
-  async function switchBought(shopid : string){    
-    
+  async function switchBought(shopid: string) {
+
     // hitta shopid i totala listan
     const shopindex = allShopdata.findIndex((item) => item.id == shopid);
     const clickedShop = allShopdata[shopindex];
@@ -116,28 +125,32 @@ export default function HomeScreen() {
 
   function showList() {
     console.log("NU FILTER " + listtype);
-    if(listtype == "ALL") {
+    if (listtype == "ALL") {
       console.log(allShopdata);
       setShopdata(allShopdata);
     }
-    if(listtype == "BOUGHT") {
+    if (listtype == "BOUGHT") {
       const filtershop = allShopdata.filter((item) => item.havebought == true);
       console.log(filtershop);
       setShopdata(filtershop);
     }
-    if(listtype == "NOTBOUGHT") {
+    if (listtype == "NOTBOUGHT") {
       const filtershop = allShopdata.filter((item) => item.havebought == false);
       console.log(filtershop);
       setShopdata(filtershop);
     }
-    
+
   }
 
   return (
     <SafeAreaView>
-      <View>
-        
-        <View style={{ flexDirection: "row" }}>
+      <View style={{ marginTop: 70 }}>
+
+        {errormessage != "" &&
+          <Text>{errormessage}</Text>
+        }
+
+        <View style={{ flexDirection: "row", width: Platform.isPad ? "50%" : "100%" }}>
           <View style={{ flex: 1 }}>
             <TextInput style={styles.shopTextinput} placeholder='Namn' onChangeText={setAddtext} value={addtext} />
             <TextInput style={styles.shopTextinput} placeholder='Antal' onChangeText={setAddamount} value={addamount} />
@@ -145,21 +158,30 @@ export default function HomeScreen() {
           <Button title='Add' onPress={saveShopping} />
         </View>
 
+        <Text>{Platform.OS}</Text>
+
+        {Platform.OS == "ios" &&
+          <Text>DETTA ÄR EN IPHONE!!</Text>
+        }
+        {Platform.isPad &&
+          <Text>DETTA ÄR EN IPAD!!</Text>
+        }
+
         <View style={{ flexDirection: "row" }}>
-          
-          <TouchableHighlight style={ listtype == "ALL" ? styles.shopFilterTabActive : styles.shopFilterTab } onPress={showAll}>
+
+          <TouchableHighlight style={listtype == "ALL" ? styles.shopFilterTabActive : styles.shopFilterTab} onPress={showAll}>
             <View>
               <Text>Alla</Text>
             </View>
           </TouchableHighlight>
 
-          <TouchableHighlight style={ listtype == "BOUGHT" ? styles.shopFilterTabActive : styles.shopFilterTab } onPress={showBought}>
+          <TouchableHighlight style={listtype == "BOUGHT" ? styles.shopFilterTabActive : styles.shopFilterTab} onPress={showBought}>
             <View>
               <Text>Köpt</Text>
             </View>
           </TouchableHighlight>
 
-          <TouchableHighlight style={ listtype == "NOTBOUGHT" ? styles.shopFilterTabActive : styles.shopFilterTab } onPress={showNotBought}>
+          <TouchableHighlight style={listtype == "NOTBOUGHT" ? styles.shopFilterTabActive : styles.shopFilterTab} onPress={showNotBought}>
             <View>
               <Text>Ej köpt</Text>
             </View>
@@ -168,16 +190,33 @@ export default function HomeScreen() {
         </View>
 
         <FlatList
-          style={{ }}
+          style={{}}
           data={shopdata}
-          renderItem={({item, index}) => 
+          renderItem={({ item, index }) =>
             <Pressable onPress={() => { switchBought(item.id) }}>
               <Shoprow rowitem={item} />
             </Pressable>
           }
-          />
+        />
 
         <Button title='Delete all' onPress={deleteall} />
+
+        {errormessage != "" &&
+          <View style={ styles.errorBackground }>
+            
+            <Pressable style={ styles.errorColorBack } onPress={() => { setErrormessage("") }}>
+              <View ></View>
+            </Pressable>
+
+            <View style={styles.errorBox}>
+              <Text>{errormessage}</Text>
+
+              <TouchableHighlight onPress={() => { setErrormessage(""); }}>
+                <Text>OK</Text>
+              </TouchableHighlight>
+            </View>
+          </View>
+        }
 
       </View>
     </SafeAreaView>
@@ -226,4 +265,25 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
   },
+  errorBackground: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    
+  },
+  errorColorBack: {
+    position: "absolute",
+    backgroundColor: "black",
+    opacity: 0.5,
+    width: "100%",
+    height: "100%",
+  },
+  errorBox: {
+    width: 200,
+    height: 200,
+    backgroundColor: "red",
+    opacity: 1,
+  }
 });
