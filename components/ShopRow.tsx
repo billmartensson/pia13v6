@@ -1,3 +1,4 @@
+import { Shopitem } from "@/models/Shopitem";
 import { Text, View } from "react-native";
 
 type shoprowProps = {

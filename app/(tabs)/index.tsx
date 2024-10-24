@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Shoprow from '@/components/ShopRow';
 import { Shopitem } from '@/models/Shopitem';
+import ShopErrorBox from '@/components/ShopErrorBox';
 
 export default function HomeScreen() {
 
@@ -25,6 +26,8 @@ export default function HomeScreen() {
 
   const [errormessage, setErrormessage] = useState("");
 
+  const [showDelete, setShowDelete] = useState(false);
+
   useEffect(() => {
     loadShopping();
   }, []);
@@ -37,6 +40,7 @@ export default function HomeScreen() {
   async function deleteall() {
     await AsyncStorage.removeItem("shoplist");
     setAllShopdata([]);
+    setShowDelete(false);
   }
 
   async function saveShopping() {
@@ -199,23 +203,28 @@ export default function HomeScreen() {
           }
         />
 
-        <Button title='Delete all' onPress={deleteall} />
+        <Button title='Delete all' onPress={() => { setShowDelete(true) }} />
+
+        {showDelete &&
+          <ShopErrorBox
+            message={"Vill du verkligen ta bort allt?"}
+            button1click={() => {
+              setShowDelete(false);
+            }}
+            button1text={"Avbryt"}
+            button2click={() => { deleteall() }}
+            button2text={"Ja, väck med allt!"}
+          />
+        }
 
         {errormessage != "" &&
-          <View style={ styles.errorBackground }>
-            
-            <Pressable style={ styles.errorColorBack } onPress={() => { setErrormessage("") }}>
-              <View ></View>
-            </Pressable>
-
-            <View style={styles.errorBox}>
-              <Text>{errormessage}</Text>
-
-              <TouchableHighlight onPress={() => { setErrormessage(""); }}>
-                <Text>OK</Text>
-              </TouchableHighlight>
-            </View>
-          </View>
+          <ShopErrorBox
+            message={errormessage}
+            button1click={() => {
+              setErrormessage("")
+            }}
+            button1text={"Jepp jepp"}
+          />
         }
 
       </View>
@@ -271,7 +280,7 @@ const styles = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    
+
   },
   errorColorBack: {
     position: "absolute",
